@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa de Votação RJ</title>
+<meta name="description" content="Distribuição territorial dos votos no estado do Rio de Janeiro por bairro — comparação entre partidos, candidaturas, abstenção, brancos e nulos (boletins de urna do TSE).">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="css/estilo.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%231171b0%22/%3E%3Cpath d=%22M3 11l3-4 3 2 4-5%22 stroke=%22%23fff%22 stroke-width=%221.6%22 fill=%22none%22/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="topo">
+  <h1>Análise territorial dos votos — RJ</h1>
+  <nav class="abas" role="tablist">
+    <button class="aba ativa" data-aba="mapas" role="tab">Mapas</button>
+    <button class="aba" data-aba="dispersao" role="tab">Dispersão A × B</button>
+    <button class="aba" data-aba="tabela" role="tab">Tabela analítica</button>
+    <button class="aba" data-aba="metodologia" role="tab">Metodologia</button>
+  </nav>
+</header>
+
+<div id="carregando" class="carregando"><div class="girando"></div><span id="carregando-txt">Carregando dados…</span></div>
+<div id="erro" class="alerta alerta-erro" hidden></div>
+
+<main>
+  <!-- filtros gerais: valem para as quatro abas -->
+  <section class="cartao filtros" aria-label="Filtros gerais">
+    <label>Ano<select id="ano"></select></label>
+    <label>Turno<select id="turno"></select></label>
+    <label>Cargo<select id="cargo"></select></label>
+    <label class="largo">Município<select id="mun"></select></label>
+    <fieldset><legend>Exibir</legend>
+      <label class="radio"><input type="radio" name="exibicao" value="pct" checked> Percentual</label>
+      <label class="radio"><input type="radio" name="exibicao" value="abs"> Nº absoluto</label>
+    </fieldset>
+    <fieldset><legend>Intervalos</legend>
+      <label class="radio"><input type="radio" name="metodo" value="quantis" checked> Quantis</label>
+      <label class="radio"><input type="radio" name="metodo" value="iguais"> Iguais</label>
+      <label class="radio" id="caixa-legenda" hidden><input type="checkbox" id="legenda"> Incluir votos de legenda</label>
+    </fieldset>
+  </section>
+  <div id="aviso" class="alerta alerta-ok"></div>
+
+  <!-- ===================== ABA MAPAS ===================== -->
+  <section id="aba-mapas" class="painel-aba">
+    <div class="grade-ab">
+      <article class="cartao cartao-mapa" id="cartaoA">
+        <header><span class="chip" style="background:#c2570c">A</span><div class="titulo-mapa" id="tituloA"></div></header>
+        <div class="controles" data-lado="A"></div>
+        <div class="mapa" id="mapA"></div>
+        <div class="resumo" id="resumoA"></div>
+      </article>
+      <article class="cartao cartao-mapa" id="cartaoB">
+        <header><span class="chip" style="background:#5b3a9b">B</span><div class="titulo-mapa" id="tituloB"></div></header>
+        <div class="controles" data-lado="B"></div>
+        <div class="mapa" id="mapB"></div>
+        <div class="resumo" id="resumoB"></div>
+      </article>
+    </div>
+    <div class="grade-c">
+      <article class="cartao cartao-mapa" id="cartaoC">
+        <header><span class="chip" style="background:#555">C</span><div class="titulo-mapa" id="tituloC"></div></header>
+        <div class="controles explica-dif" id="explicaC"></div>
+        <div class="mapa" id="mapC"></div>
+        <div class="resumo" id="resumoC"></div>
+      </article>
+    </div>
+    <p class="nota-rodape">Percentual = participação no denominador indicado em cada mapa; número absoluto = contagem.
+      Os mapas descrevem a distribuição territorial dos votos e não indicam que um partido ou candidatura
+      “domina” um território. O voto é atribuído ao bairro do local de votação, não ao de residência do eleitor.</p>
+  </section>
+
+  <!-- ===================== ABA DISPERSÃO ===================== -->
+  <section id="aba-dispersao" class="painel-aba" hidden>
+    <div class="cartao">
+      <div class="barra">
+        <label>Unidade de cada ponto
+          <select id="nivel_disp">
+            <option value="unidade">Bairro / unidade</option>
+            <option value="local">Local de votação</option>
+            <option value="zona">Zona eleitoral</option>
+            <option value="municipio">Município</option>
+          </select></label>
+        <label>Mínimo de eleitores aptos<input type="number" id="min_aptos" value="500" min="0" step="100"></label>
+      </div>
+      <div id="dispersao" class="dispersao"></div>
+      <div class="resumo" id="nota_disp"></div>
+    </div>
+    <div class="cartao">
+      <h3>A associação muda com a escala?</h3>
+      <div id="tab_escalas"></div>
+      <div id="alerta_escalas"></div>
+    </div>
+    <div class="cartao caixa-limites">
+      <h3>O que este gráfico permite dizer</h3>
+      <p><b>Permite:</b> descrever se territórios com valores altos de A tendem a ter valores altos
+        (ou baixos) de B — por exemplo, <i>“bairros com maior abstenção tenderam a dar menor
+        percentual à candidatura A”</i>.</p>
+      <p><b>Não permite:</b> concluir nada sobre eleitores individuais — por exemplo,
+        <i>“os eleitores de A se abstiveram menos”</i> ou <i>“quem anulou votaria em A”</i>
+        (falácia ecológica). Quem se absteve não tem voto: não há como saber em quem votaria.</p>
+      <p><b>Cuidados embutidos:</b> correlação ponderada pelos eleitores aptos; Spearman (ordem)
+        ao lado de Pearson; correlação <i>dentro dos municípios</i> (descontado o efeito município);
+        comparação entre escalas; exclusão de unidades pequenas; sem p-valores, porque territórios
+        vizinhos não são observações independentes.</p>
+      <p>Afirmações sobre indivíduos exigem dados de pesquisa (ex.: ESEB).</p>
+    </div>
+  </section>
+
+  <!-- ===================== ABA TABELA ===================== -->
+  <section id="aba-tabela" class="painel-aba" hidden>
+    <div class="cartao">
+      <div class="barra">
+        <h3>Uma linha por unidade espacial — recorte e seleções atuais</h3>
+        <button id="baixar_tabela" class="botao">Baixar CSV</button>
+      </div>
+      <p class="legenda-tabela" id="legenda_tabela"></p>
+      <div id="tabela"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA METODOLOGIA ===================== -->
+  <section id="aba-metodologia" class="painel-aba" hidden>
+    <nav class="subabas">
+      <button class="subaba ativa" data-sub="texto">Texto</button>
+      <button class="subaba" data-sub="qualidade">Controle de qualidade</button>
+      <button class="subaba" data-sub="corresp">Correspondência zona × bairro</button>
+    </nav>
+    <div class="painel-sub" id="sub-texto"><div class="cartao texto-metodologia" id="metodologia_texto">Carregando…</div></div>
+    <div class="painel-sub" id="sub-qualidade" hidden>
+      <div class="grade-ab">
+        <div class="cartao"><h3>Validação do pipeline</h3><div id="validacao"></div></div>
+        <div class="cartao"><h3>Unidades por situação do dado (recorte atual)</h3><div id="ctrl_status"></div></div>
+      </div>
+      <div class="cartao"><h3>Locais sem correspondência geográfica (contabilizados, fora do mapa)</h3><div id="sem_corresp"></div></div>
+      <div class="cartao"><h3>Auditoria — correspondências não espaciais</h3><div id="auditoria"></div></div>
+    </div>
+    <div class="painel-sub" id="sub-corresp" hidden>
+      <div class="cartao"><h3>Descritiva: locais, seções e eleitores de cada zona em cada unidade (não há rateio)</h3><div id="corresp"></div></div>
+    </div>
+  </section>
+</main>
+
+<footer class="rodape">
+  Dados: Tribunal Superior Eleitoral (boletins de urna, cadastro de locais de votação) e IBGE (malhas de bairros e municípios).
+  <span id="gerado_em"></span> · Código e metodologia no repositório do projeto.
+</footer>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/dados.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/tabelas.js"></script>
+<script src="js/mapas.js"></script>
+<script src="js/abas.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

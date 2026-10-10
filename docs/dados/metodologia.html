@@ -1,0 +1,99 @@
+<h2 id="metodologia">Metodologia</h2>
+<h3 id="de-onde-v-m-os-n-meros">De onde vêm os números</h3>
+<p>Os votos vêm dos <strong>boletins de urna</strong> do TSE (arquivo <code>bweb</code>), que registram, <strong>seção por seção</strong>, os votos de cada candidatura, legenda, brancos e nulos, além de aptos e comparecimento.</p>
+<p>A agregação não usa rateio:</p>
+<p><strong>seção → local de votação (onde a urna funcionou) → bairro (o polígono onde o local está)</strong></p>
+<p>Cada seção pertence a um único local e cada local a uma única unidade espacial. Nenhum voto é dividido ou contado duas vezes. Uma zona eleitoral com escolas em vários bairros tem as suas seções somadas em cada bairro conforme a escola. A zona aparece apenas como informação, no tooltip e na aba <em>Correspondência</em>.</p>
+<p>Os totais do boletim conferem com os arquivos oficiais por zona do TSE, cargo a cargo: votos nominais válidos, legenda, anulados <em>sub judice</em>, brancos, nulos, nulos técnicos, aptos e comparecimento.</p>
+<h3 id="unidade-espacial">Unidade espacial</h3>
+<ul>
+<li><strong>Bairro</strong> — malha de bairros do IBGE (Censo 2022), disponível para 31 dos 92 municípios do RJ.</li>
+<li><strong>Área fora dos bairros oficiais</strong> — parte desses municípios não coberta por bairros.</li>
+<li><strong>Município</strong> — nos 61 municípios sem bairros na malha do IBGE.</li>
+</ul>
+<p>Os limites municipais vêm da Malha Municipal Digital do IBGE (2025).</p>
+<h3 id="indicadores">Indicadores</h3>
+<table>
+<thead>
+<tr>
+<th>Indicador</th>
+<th>Numerador</th>
+<th>Denominador</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Candidatura</td>
+<td>votos nominais da candidatura</td>
+<td>votos nominais válidos*</td>
+</tr>
+<tr>
+<td>Partido</td>
+<td>soma dos votos nominais das candidaturas do partido (+ legenda, se marcado)</td>
+<td>votos nominais válidos*</td>
+</tr>
+<tr>
+<td>Abstenção</td>
+<td>abstenções</td>
+<td>eleitores aptos</td>
+</tr>
+<tr>
+<td>Brancos</td>
+<td>votos brancos</td>
+<td>total de votos do cargo**</td>
+</tr>
+<tr>
+<td>Nulos</td>
+<td>votos nulos + nulos técnicos</td>
+<td>total de votos do cargo**</td>
+</tr>
+</tbody>
+</table>
+<p>* Com <strong>“Incluir votos de legenda”</strong> marcado (só para cargos proporcionais), o denominador passa a ser nominais válidos + legenda válidos. A legenda entra no numerador dos <strong>partidos</strong>; uma candidatura individual nunca recebe legenda. A opção vale para os dois mapas ao mesmo tempo, para que A e B fiquem na mesma base.</p>
+<p>** Igual ao comparecimento, exceto para Senador quando há duas vagas, em que cada eleitor dá dois votos.</p>
+<p>Os percentuais de uma unidade são calculados <strong>somando numerador e denominador</strong> de todos os locais da unidade e só então dividindo. Não há média de percentuais.</p>
+<p><strong>Nulos técnicos</strong> são votos em números que não correspondem a candidaturas aptas; o TSE os contabiliza como nulos. Votos em candidaturas <strong>anuladas <em>sub judice</em></strong> não entram nos votos válidos.</p>
+<h3 id="mapas">Mapas</h3>
+<ul>
+<li><strong>A e B</strong> usam escala sequencial. Quando os dois indicadores têm o mesmo denominador (por exemplo, partido × candidatura, ou brancos × nulos), os intervalos são <strong>comuns</strong>. Quando não têm, cada mapa tem <strong>escala própria</strong>, indicada na legenda.</li>
+<li><strong>C — mesmo denominador:</strong> diferença <strong>%A − %B em pontos percentuais</strong>, com escala divergente centrada em zero. Laranja indica vantagem de A, roxo vantagem de B, e a classe central é o empate percentual.</li>
+<li><strong>C — denominadores diferentes</strong> (por exemplo, candidatura × abstenção): a subtração não teria significado. O mapa vira <strong>bivariado 3×3</strong>, cruzando os tercis de A e de B no recorte.</li>
+<li><strong>Número absoluto:</strong> círculos com área proporcional à contagem (votos, abstenções etc.). No mapa C, mostra a diferença absoluta A − B.</li>
+</ul>
+<h3 id="dados-ausentes-nunca-convertidos-em-zero">Dados ausentes (nunca convertidos em zero)</h3>
+<table>
+<thead>
+<tr>
+<th>Situação</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sem informação eleitoral</td>
+<td>nenhum local de votação dentro da unidade (ninguém vota ali)</td>
+</tr>
+<tr>
+<td>Denominador zero</td>
+<td>há local, mas nenhum voto ou eleitor na base do indicador</td>
+</tr>
+<tr>
+<td>Fora da circunscrição</td>
+<td>seleção não concorre naquele município (cargos municipais)</td>
+</tr>
+<tr>
+<td>Sem correspondência geográfica</td>
+<td>locais cujas coordenadas e nome não permitem posicionar; votos listados em <em>Controle de qualidade</em></td>
+</tr>
+</tbody>
+</table>
+<p>Zero só aparece quando a candidatura concorria e recebeu zero voto nas seções daquela unidade.</p>
+<h3 id="limites-de-interpreta-o">Limites de interpretação</h3>
+<ul>
+<li><strong>Percentual ≠ número absoluto.</strong> Um bairro pequeno e um grande podem ter a mesma cor com volumes muito diferentes.</li>
+<li>O voto é atribuído ao bairro do <strong>local de votação</strong>, não ao bairro onde o eleitor mora.</li>
+<li>O cadastro eleitoral demora a excluir eleitores falecidos ou que se mudaram, o que <strong>infla a abstenção</strong>, sobretudo em áreas de população mais idosa ou de alta mobilidade.</li>
+<li><strong>Falácia ecológica:</strong> os mapas e a aba <em>Dispersão</em> mostram relações entre <strong>territórios</strong>, não entre pessoas. “Bairros com mais abstenção deram menos votos a A” é uma descrição válida. “Os eleitores de A se abstêm menos” não pode ser concluído destes dados. A aba <em>Dispersão</em> compara a associação em quatro escalas, mostra Pearson ponderado e Spearman, desconta o efeito município e exclui unidades pequenas. Não mostra p-valores, porque territórios vizinhos não são observações independentes.</li>
+<li>Os mapas não indicam que um partido ou candidatura “domina” um território.</li>
+</ul>
+
